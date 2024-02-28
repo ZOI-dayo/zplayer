@@ -17,8 +17,14 @@ find_library(AVUTIL_LIBRARY avutil)
 find_path(SWSCALE_INCLUDE_DIR libswscale/swscale.h)
 find_library(SWSCALE_LIBRARY swscale)
 
+set (CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
+find_package(OpenGL REQUIRED)
+find_package(GLFW REQUIRED)
+
 add_executable(
   zplayer
+  ${SRC_DIR}/videodecoder.cpp
   ${SRC_DIR}/main.cpp
 )
 target_include_directories(
@@ -26,9 +32,11 @@ target_include_directories(
   PRIVATE
   ${INC_DIR}
   ${AVCODEC_INCLUDE_DIR} ${AVFORMAT_INCLUDE_DIR} ${AVUTIL_INCLUDE_DIR} ${SWSCALE_INCLUDE_DIR}
+${OPENGL_INCLUDE_DIR} ${GLFW_INCLUDE_DIR}
 )
 target_link_libraries(
   zplayer
   PRIVATE
   ${AVCODEC_LIBRARY} ${AVFORMAT_LIBRARY} ${AVUTIL_LIBRARY} ${SWSCALE_LIBRARY}
+  ${OPENGL_LIBRARIES} ${GLFW_LIBRARIES}
 )
