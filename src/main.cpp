@@ -28,11 +28,12 @@ void draw(GLFWwindow *window) {
   // std::cout << "aspect: " << aspect << ", video_aspect: " << video_aspect << std::endl;
 
   if(!decoder->frame_queue->empty()) {
+    // std::cout << "frame_queue size: " << decoder->frame_queue->size() << std::endl;
     AVFrame* image = decoder->frame_queue->front();
     AVDictionaryEntry *timestamp = av_dict_get(image->metadata, "timestamp", nullptr, AV_DICT_MATCH_CASE);
     std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
     double time = (double)std::chrono::duration_cast<std::chrono::microseconds>(now - start_time).count() / 1000000;
-    std::cout << "timestamp: " << timestamp->value << ", time:" << time << std::endl;
+    // std::cout << "timestamp: " << timestamp->value << ", time:" << time << std::endl;
     // std::cout << "fps: " << frame_count / time << std::endl;
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, video_width, video_height, 0, GL_RGB, GL_UNSIGNED_BYTE, image->data[0]);
@@ -116,9 +117,7 @@ int main(int argc, char *argv[]) {
   glfwMakeContextCurrent(window);
   glClearColor(.5f,.5f,.0f,.0f);
   // glfwSwapInterval(1);
-  glfwSetFramebufferSizeCallback(window,
-                                 framebuffer_size_callback
-                                 );
+  glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
   GLuint texture;
@@ -138,8 +137,8 @@ int main(int argc, char *argv[]) {
   // timer start
   start_time = std::chrono::system_clock::now();
 
-  while(glfwWindowShouldClose(window) == GL_FALSE){
 
+  while(glfwWindowShouldClose(window) == GL_FALSE){
     // std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
     // int64_t timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time).count();
     // video.seek(timestamp*16000);
@@ -152,6 +151,7 @@ int main(int argc, char *argv[]) {
 
   }
   // av_frame_free(&frame);
+  // delete decoder;
   return 0;
   // --- OpenGL End ---
 

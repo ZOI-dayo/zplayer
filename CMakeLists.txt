@@ -5,6 +5,8 @@ set(SRC_DIR ${PROJECT_SOURCE_DIR}/src)
 set(INC_DIR ${PROJECT_SOURCE_DIR}/include)
 add_definitions( -std=c++17 -Wall )
 
+find_package(Threads REQUIRED)
+
 find_path(AVCODEC_INCLUDE_DIR libavcodec/avcodec.h)
 find_library(AVCODEC_LIBRARY avcodec)
 
@@ -38,5 +40,5 @@ target_link_libraries(
   zplayer
   PRIVATE
   ${AVCODEC_LIBRARY} ${AVFORMAT_LIBRARY} ${AVUTIL_LIBRARY} ${SWSCALE_LIBRARY}
-  ${OPENGL_LIBRARIES} ${GLFW_LIBRARIES}
+  ${OPENGL_LIBRARIES} ${GLFW_LIBRARIES} Threads::Threads
 )
