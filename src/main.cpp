@@ -13,13 +13,35 @@ extern "C" {
 #include "videodecoder.hpp"
 
 int video_width, video_height;
+video_decoder::VideoDecoder *decoder = nullptr;
+
+std::chrono::system_clock::time_point start_time;
+
+int frame_count = 0;
 void draw(GLFWwindow *window) {
+  frame_count++;
 
   int width, height;
   glfwGetWindowSize(window, &width, &height);
   float aspect = (float)width / (float)height;
   float video_aspect = (float)video_width / (float)video_height;
   // std::cout << "aspect: " << aspect << ", video_aspect: " << video_aspect << std::endl;
+
+  if(!decoder->frame_queue->empty()) {
+    AVFrame* image = decoder->frame_queue->front();
+    AVDictionaryEntry *timestamp = av_dict_get(image->metadata, "timestamp", nullptr, AV_DICT_MATCH_CASE);
+    std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+    double time = (double)std::chrono::duration_cast<std::chrono::microseconds>(now - start_time).count() / 1000000;
+    std::cout << "timestamp: " << timestamp->value << ", time:" << time << std::endl;
+    // std::cout << "fps: " << frame_count / time << std::endl;
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, video_width, video_height, 0, GL_RGB, GL_UNSIGNED_BYTE, image->data[0]);
+    if(std::stod(timestamp->value) < time) {
+      av_frame_free(&image);
+      decoder->frame_queue->pop();
+    }
+  }
+  // std::cout << "frame_queue size: " << decoder->frame_queue->size() << std::endl;
 
   glClear(GL_COLOR_BUFFER_BIT);
   glEnable(GL_TEXTURE_2D);
@@ -51,6 +73,7 @@ void draw(GLFWwindow *window) {
   glDisable(GL_TEXTURE_2D);
   glfwSwapBuffers(window);
 
+  glfwPollEvents();
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -69,14 +92,15 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   std::cout << "ファイルを開いています..." << std::endl;
-  video_decoder::VideoFile video(video_path);
+  // video_decoder::VideoFile video(video_path);
+  decoder = new video_decoder::VideoDecoder(video_path);
 
-  video.seek(600000);
+  // video.seek(600000);
 
-  AVFrame* frame = av_frame_alloc();
-  video.get_frame(frame);
-  video_width = video.width();
-  video_height = video.height();
+  // AVFrame* frame = av_frame_alloc();
+  // video.get_frame(frame);
+  video_width = decoder->video_file->width();
+  video_height = decoder->video_file->height();
   // --- OpenGL Start ---
 
   if(glfwInit() == GL_FALSE) {
@@ -91,7 +115,7 @@ int main(int argc, char *argv[]) {
   }
   glfwMakeContextCurrent(window);
   glClearColor(.5f,.5f,.0f,.0f);
-  glfwSwapInterval(1);
+  // glfwSwapInterval(1);
   glfwSetFramebufferSizeCallback(window,
                                  framebuffer_size_callback
                                  );
@@ -104,7 +128,7 @@ int main(int argc, char *argv[]) {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
   glTexParameterf( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, video.width(), video.height(), 0, GL_RGB, GL_UNSIGNED_BYTE, frame->data[0]);
+  // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, video_width, video_height, 0, GL_RGB, GL_UNSIGNED_BYTE,  frame->data[0]);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, texture);
 
@@ -112,7 +136,6 @@ int main(int argc, char *argv[]) {
   glLoadIdentity();
 
   // timer start
-  std::chrono::system_clock::time_point start_time;
   start_time = std::chrono::system_clock::now();
 
   while(glfwWindowShouldClose(window) == GL_FALSE){
@@ -124,11 +147,11 @@ int main(int argc, char *argv[]) {
     // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, video.width(), video.height(), 0, GL_RGB, GL_UNSIGNED_BYTE, frame->data[0]);
     draw(window);
     // glfwWaitEvents();
-    glfwPollEvents();
+    // glfwPollEvents();
 
 
   }
-  av_frame_free(&frame);
+  // av_frame_free(&frame);
   return 0;
   // --- OpenGL End ---
 

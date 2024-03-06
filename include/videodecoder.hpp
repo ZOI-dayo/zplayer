@@ -9,6 +9,9 @@ extern "C" {
 #include <libswscale/swscale.h>
 }
 
+#include <thread>
+#include "threadsafe_queue.hpp"
+
 namespace video_decoder {
 
 class VideoFile {
@@ -21,10 +24,20 @@ private:
 public:
   VideoFile(char* file_path);
   ~VideoFile();
-  void get_frame(AVFrame *frame);
   int width();
   int height();
-  void seek(int64_t timestamp);
+  void decode(ThreadsafeQueue<AVFrame*> *frame_queue, int max_frames);
+  // void seek(int64_t timestamp);
+};
+
+class VideoDecoder {
+private:
+  std::thread decode_thread;
+public:
+  ThreadsafeQueue<AVFrame*> *frame_queue;
+  VideoFile *video_file;
+  VideoDecoder(char* file_path);
+  ~VideoDecoder();
 };
 
 }
